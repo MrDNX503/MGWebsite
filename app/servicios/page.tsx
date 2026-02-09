@@ -1,97 +1,64 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { supabase } from '@/lib/supabaseClient';
 
-// Datos de servicios (más adelante vendrán de Supabase)
-const services = [
-  {
-    slug: 'bodas',
-    title: 'Maquillaje para Bodas',
-    description: 'Look impecable y duradero para que brilles en tu día más especial. Incluye prueba previa y retoques el día del evento.',
-    image: '/bodas.jpeg',
-    priceRange: 'Desde $80',
-  },
-  {
-    slug: 'quince',
-    title: 'Maquillaje para 15 Años',
-    description: 'Estilo fresco, juvenil y glamoroso que captura la magia de esta transición única.',
-    image: '/15age.jpeg',
-    priceRange: 'Desde $60',
-  },
-  {
-    slug: 'eventos',
-    title: 'Maquillaje para Eventos Especiales',
-    description: 'Personalizado para cualquier ocasión: graduaciones, cumpleaños, galas o noches importantes.',
-    image: '/eventosEspeciales.jpeg',
-    priceRange: 'Desde $50',
-  },
-  {
-    slug: 'fotos',
-    title: 'Maquillaje para Sesiones de Fotos',
-    description: 'Resalta tus rasgos bajo cualquier iluminación. Ideal para book fotográfico, redes sociales o portafolio.',
-    image: '/fotos.jpeg',
-    priceRange: 'Desde $45',
-  },
-  {
-    slug: 'artistico',
-    title: 'Maquillaje Artístico',
-    description: 'Diseños creativos y audaces: fantasía, editorial, cosplay o looks de impacto para eventos temáticos.',
-    image: '/artistico.jpeg',
-    priceRange: 'Desde $70',
-  },
-];
+interface Service {
+  id: number;
+  name: string;
+  slug: string;
+  description: string;
+  price: number;
+  thumbnail_url?: string;
+}
 
 export default function ServiciosPage() {
+  const [services, setServices] = useState<Service[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchServices = async () => {
+      const { data } = await supabase.from('services').select('*').eq('is_active', true).order('id');
+      setServices(data || []);
+      setLoading(false);
+    };
+    fetchServices();
+  }, []);
+
+  if (loading) return <div className="min-h-screen bg-neutral-950 flex items-center justify-center text-white">Cargando servicios...</div>;
+
   return (
-    <div className="min-h-screen bg-black text-white px-4 py-16 pt-24">
-      <div className="max-w-7xl mx-auto">
-        <h1 className="text-4xl md:text-5xl font-serif text-center mb-16">Nuestros Servicios</h1>
+    <div className="min-h-screen bg-neutral-950 p-8 text-white">
+      <h1 className="text-4xl font-bold text-pink-500 text-center mb-12">Nuestros Servicios</h1>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-8">
-          {services.map((service) => (
-            <div
-              key={service.slug}
-              className="bg-gray-900 rounded-2xl overflow-hidden shadow-2xl border border-gray-800 hover:border-accent transition-all duration-300 group"
-            >
-              <div className="relative h-64 overflow-hidden">
-                <img
-                  src={service.image}
-                  alt={service.title}
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
-              </div>
-
-              <div className="p-6">
-                <h3 className="text-2xl font-serif mb-3 text-accent group-hover:text-white transition-colors">
-                  {service.title}
-                </h3>
-                <p className="text-gray-300 mb-4 line-clamp-3">
-                  {service.description}
-                </p>
-                <div className="flex justify-between items-center">
-                  <span className="text-lg font-medium text-white">{service.priceRange}</span>
-                  <Link
-  href={`/galeria?servicio=${service.slug}`}
-  className="bg-accent text-black font-semibold px-5 py-2 rounded-full hover:bg-white hover:text-black transition"
->
-  Ver galería
-</Link>
-                </div>
-              </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+        {services.map((service) => (
+          <div key={service.id} className="bg-neutral-900 rounded-lg shadow-xl overflow-hidden transform hover:scale-105 transition">
+            {service.thumbnail_url && (
+              <img src={service.thumbnail_url} alt={service.name} className="w-full h-48 object-cover" />
+            )}
+            <div className="p-6">
+              <h2 className="text-2xl font-bold text-pink-500 mb-2">{service.name}</h2>
+              <p className="text-neutral-300 mb-4">{service.description}</p>
+              <p className="text-lg font-semibold mb-4">Precio: ${service.price}</p>
+              <Link
+                href={`/galeria?servicioId=${service.id}`}  // ← Cambia a servicioId + ID numérico
+                className="block bg-pink-600 text-white py-2 px-4 rounded text-center hover:bg-pink-700 transition"
+              >
+                Ver Galería
+              </Link>
             </div>
-          ))}
-        </div>
-
-        {/* Call to action */}
-        <div className="text-center mt-16">
-          <Link
-            href="/citas"
-            className="inline-block bg-rose-600 text-white font-bold text-xl px-10 py-5 rounded-full shadow-2xl hover:bg-rose-700 hover:scale-105 transition-all duration-300"
-          >
-            ¡Reservar Cita Ahora!
-          </Link>
-        </div>
+          </div>
+        ))}
+      </div>
+      <div className="mt-16 text-center">
+        <Link
+          href="/citas"
+          className="inline-block bg-pink-600 hover:bg-pink-700 text-white font-bold text-lg px-10 py-5 rounded-full shadow-xl transition-all duration-300 transform hover:scale-105"
+        >
+          ¿Te gustó lo que viste? ¡Agenda tu cita!
+        </Link>
       </div>
     </div>
   );

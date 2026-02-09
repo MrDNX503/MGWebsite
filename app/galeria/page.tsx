@@ -1,125 +1,135 @@
 'use client';
 
-import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import Image from 'next/image';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { supabase } from '@/lib/supabaseClient';
 
-// Todas las fotos organizadas por servicio
-const galleryData = {
-  bodas: [
-    '/galeria/bodas/bodas.jpeg',
-    '/galeria/bodas/bodas-1.jpeg',
-    // agrega aquí TODAS las que subiste (una línea por foto)
-  ],
-  quince: [
-    '/galeria/quince/15age.jpeg',
-    '/galeria/quince/15age-1.jpeg',
-    '/galeria/quince/15age-2.jpeg',
-    '/galeria/quince/15age-3.jpeg',
-    '/galeria/quince/15age-5.jpeg',
-    '/galeria/quince/15age-6.jpeg',
-    // todas las de 15 años
-  ],
-  eventos: [
-    '/galeria/eventos/eventosEspeciales.jpeg',
-    '/galeria/eventos/eventosEspeciales-1.jpeg',
-    '/galeria/eventos/eventosEspeciales-2.jpeg',
-    '/galeria/eventos/eventosEspeciales-3.jpeg',
-    '/galeria/eventos/eventosEspeciales-4.jpeg',
-    '/galeria/eventos/eventosEspeciales-5.jpeg',
-    // todas las de eventos
-  ],
-  fotos: [
-    '/galeria/fotos/fotos.jpeg',
-    '/galeria/fotos/fotos-1.jpeg',
-    '/galeria/fotos/fotos-2.jpeg',
-    '/galeria/fotos/fotos-3.jpeg',
-    '/galeria/fotos/fotos-4.jpeg',
-    '/galeria/fotos/fotos-5.jpeg',
-    '/galeria/fotos/fotos-6.jpeg',
-    '/galeria/fotos/fotos-7.jpeg',
-    '/galeria/fotos/fotos-8.jpeg',
-    // todas las de fotos
-  ],
-  artistico: [
-    '/galeria/artistico/artistico-1.jpeg',
-    '/galeria/artistico/artistico-2.jpeg',
-    '/galeria/artistico/artistico-3.jpeg',
-    '/galeria/artistico/artistico-4.jpeg',
-    '/galeria/artistico/artistico-5.jpeg',
-    '/galeria/artistico/artistico-6.jpeg',
-    '/galeria/artistico/artistico-7.jpeg',
-    '/galeria/artistico/artistico-8.jpeg',
-    '/galeria/artistico/artistico-9.jpeg',
-    '/galeria/artistico/artistico-10.jpeg',
-    '/galeria/artistico/artistico-11.jpeg',
-    '/galeria/artistico/artistico-12.jpeg',
-    '/galeria/artistico/artistico-13.jpeg',
-    '/galeria/artistico/artistico-14.jpeg',
-    '/galeria/artistico/artistico-15.jpeg',
-    '/galeria/artistico/artistico-16.jpeg',
-    // todas las de artístico
-  ],
-};
 
-// Títulos bonitos para la galería
-const serviceTitles = {
-  bodas: 'Maquillaje para Bodas',
-  quince: 'Maquillaje para 15 Años',
-  eventos: 'Maquillaje para Eventos Especiales',
-  fotos: 'Maquillaje para Sesiones de Fotos',
-  artistico: 'Maquillaje Artístico',
-};
+interface GalleryItem {
+  id: number;
+  service_id: number | null;
+  image_url: string;
+  alt_text: string;
+  services?: { name: string; slug: string } | null;
+}
 
 export default function GaleriaPage() {
   const searchParams = useSearchParams();
-  const servicio = searchParams.get('servicio') || '';
+  const servicioId = searchParams.get('servicioId'); // ← nuevo: filtro por ID
+  const servicioSlug = searchParams.get('servicio'); // opcional, para compatibilidad
 
-  const fotos = galleryData[servicio as keyof typeof galleryData] || Object.values(galleryData).flat();
-  const titulo = serviceTitles[servicio as keyof typeof serviceTitles] || 'Toda la Galería';
+  const [gallery, setGallery] = useState<GalleryItem[]>([]);
+  const [serviceName, setServiceName] = useState<string>(''); // para título
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchGallery = async () => {
+      setLoading(true);
+
+      let query = supabase
+        .from('gallery')
+        .select(`
+          id,
+          image_url,
+          alt_text,
+          service_id,
+          services!left (name, slug)
+        `)
+        .order('id');
+
+      // Prioridad: filtrar por ID si existe
+      if (servicioId) {
+        query = query.eq('service_id', Number(servicioId));
+      }
+      // Fallback: filtrar por slug si no hay ID
+      else if (servicioSlug) {
+        query = query.eq('services.slug', servicioSlug);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error('Error al cargar galería:', error);
+      }
+
+      setGallery(data || []);
+
+      // Obtener nombre del servicio para el título (del primer item o fallback)
+      if (data && data.length > 0 && data[0].services?.name) {
+        setServiceName(data[0].services.name);
+      } else if (servicioSlug) {
+        setServiceName(servicioSlug.replace(/-/g, ' ')); // humanizar slug
+      }
+
+      setLoading(false);
+    };
+
+    fetchGallery();
+  }, [servicioId, servicioSlug]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-neutral-950 flex items-center justify-center text-white">
+        Cargando galería...
+      </div>
+    );
+  }
+
+  const title = servicioId || servicioSlug
+    ? `Galería de ${serviceName || 'Servicio seleccionado'}`
+    : 'Toda la Galería';
 
   return (
-    <div className="min-h-screen bg-black text-white px-4 py-16 pt-24">
-      <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-12">
-          <h1 className="text-4xl md:text-5xl font-serif mb-4">
-            Galería {titulo && `- ${titulo}`}
-          </h1>
-          <Link href="/servicios" className="text-rose-400 hover:text-white text-lg">
-            ← Volver a Servicios
-          </Link>
-        </div>
+    <div className="min-h-screen bg-neutral-950 p-8 text-white">
+      <h1 className="text-4xl md:text-5xl font-bold text-pink-500 text-center mb-12">
+        {title}
+      </h1>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-  {fotos.map((src, i) => (
-    <div
-        key={i}
-        className="group relative overflow-hidden rounded-2xl shadow-2xl border border-gray-800 cursor-pointer aspect-[3/4]"
-        >
-        <Image
-            src={src}
-            alt={`Foto ${i + 1} de ${titulo}`}
-            fill
-            className="object-cover transition-transform duration-700 group-hover:scale-110"
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-6">
-            <p className="text-white font-medium">Ver en grande</p>
+      {gallery.length === 0 ? (
+        <div className="text-center py-16">
+          <p className="text-2xl text-neutral-400 mb-4">
+            {servicioId || servicioSlug
+              ? `Aún no hay fotos para este servicio`
+              : 'No hay imágenes en la galería todavía'}
+          </p>
+          <p className="text-neutral-500">
+            La maquilladora puede agregarlas desde el panel de administración.
+          </p>
         </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
+          {gallery.map((item) => (
+            <div
+              key={item.id}
+              className="relative group rounded-xl overflow-hidden shadow-2xl bg-neutral-900"
+            >
+              <img
+                src={item.image_url}
+                alt={item.alt_text || 'Imagen de galería'}
+                className="w-full h-64 object-cover transition-transform duration-500 group-hover:scale-110"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-5">
+                <p className="text-lg font-semibold text-white drop-shadow-md">
+                  {item.alt_text || 'Sin descripción'}
+                </p>
+                <p className="text-sm text-neutral-300 mt-1 drop-shadow">
+                  {item.services?.name || 'Servicio no asociado'}
+                </p>
+              </div>
+            </div>
+          ))}
         </div>
-    ))}
-    </div>
-
-        {/* Botón reserva */}
-        <div className="text-center mt-16">
-          <Link
-            href={`/citas?servicio=${servicio}`}
-            className="inline-block bg-rose-600 hover:bg-rose-700 text-white font-bold text-2xl px-12 py-6 rounded-full shadow-2xl hover:scale-105 transition-all duration-300"
-          >
-            ¡Reservar Cita Ahora!
-          </Link>
-        </div>
-      </div>
+        
+      )}
+      <div className="mt-16 text-center">
+  <Link
+    href="/citas"
+    className="inline-block bg-pink-600 hover:bg-pink-700 text-white font-bold text-lg px-10 py-5 rounded-full shadow-xl transition-all duration-300 transform hover:scale-105"
+  >
+    ¿Te gustó lo que viste? ¡Agenda tu cita!
+  </Link>
+</div>
     </div>
   );
 }
