@@ -14,6 +14,8 @@ import { ChevronLeftIcon, ChevronRightIcon, CalendarIcon } from '@heroicons/reac
 import { useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import { useAuthStore } from '@/lib/store/authStore';
+import PhoneInput from 'react-phone-input-2';
+import 'react-phone-input-2/lib/style.css'; // ← importante: import de estilos
 
 const locales = { es };
 const localizer = dateFnsLocalizer({
@@ -24,16 +26,24 @@ const localizer = dateFnsLocalizer({
   locales,
 });
 
-const defaultAvailableHours = [
+// Horas disponibles en formato 24h (internamente)
+const defaultAvailableHours24 = [
   '09:00', '10:00', '11:00', '12:00', '13:00', '14:00',
   '15:00', '16:00', '17:00', '18:00', '19:00',
 ];
 
-// Horarios ocupados de ejemplo (más adelante desde Supabase)
+// Función para convertir 24h a 12h con AM/PM
+const formatTo12Hour = (time24: string) => {
+  const [hour, minute] = time24.split(':').map(Number);
+  const period = hour >= 12 ? 'PM' : 'AM';
+  const hour12 = hour % 12 || 12;
+  return `${hour12.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')} ${period}`;
+};
+
+// Horarios ocupados de ejemplo
 const occupiedSlots: { [date: string]: string[] } = {
   '2026-02-01': ['10:00', '14:00'],
   '2026-02-05': ['09:00', '15:00'],
-  // Agrega más fechas para pruebas si necesitas
 };
 
 export default function CitasPage() {
@@ -73,48 +83,47 @@ export default function CitasPage() {
   }, []);
 
   const handleReserve = async () => {
-  if (!user) {
-    alert('Debes iniciar sesión para reservar');
-    return;
-  }
-  if (!selectedSlot || !selectedTime || !formData.servicio || !formData.telefono) {
-    alert('Completa todos los campos requeridos, incluido el teléfono');
-    return;
-  }
+    if (!user) {
+      alert('Debes iniciar sesión para reservar');
+      return;
+    }
+    if (!selectedSlot || !selectedTime || !formData.servicio || !formData.telefono) {
+      alert('Completa todos los campos requeridos, incluido el teléfono');
+      return;
+    }
 
-  const selectedService = services.find(s => s.name === formData.servicio);
-  if (!selectedService) {
-    alert('Servicio no encontrado');
-    return;
-  }
+    const selectedService = services.find(s => s.name === formData.servicio);
+    if (!selectedService) {
+      alert('Servicio no encontrado');
+      return;
+    }
 
-  const appointmentData = {
-    user_id: user.id,
-    service_id: selectedService.id,
-    appointment_date: selectedSlot.start.toISOString().split('T')[0],
-    appointment_time: selectedTime + ':00',
-    status: 'pending',
-    client_comment: formData.notas || null,
-    phone: formData.telefono.trim(),  // ← ← ← Aquí guardamos el teléfono
-    created_at: new Date().toISOString(),
+    const appointmentData = {
+      user_id: user.id,
+      service_id: selectedService.id,
+      appointment_date: selectedSlot.start.toISOString().split('T')[0],
+      appointment_time: selectedTime + ':00',
+      status: 'pending',
+      client_comment: formData.notas || null,
+      phone: formData.telefono, // guarda con código de país
+      created_at: new Date().toISOString(),
+    };
+
+    const { error } = await supabase
+      .from('appointments')
+      .insert(appointmentData);
+
+    if (error) {
+      console.error('Error al reservar:', error);
+      alert('Error al reservar la cita. Intenta de nuevo.');
+    } else {
+      alert('¡Cita reservada con éxito! La maquilladora la revisará pronto.');
+      setFormData({ nombre: '', telefono: '', servicio: '', notas: '' });
+      setSelectedTime(null);
+      setSelectedSlot(null);
+      setIsModalOpen(false);
+    }
   };
-
-  const { error } = await supabase
-    .from('appointments')
-    .insert(appointmentData);
-
-  if (error) {
-    console.error('Error al reservar:', error);
-    alert('Error al reservar la cita. Intenta de nuevo.');
-  } else {
-    alert('¡Cita reservada con éxito! La maquilladora la revisará pronto.');
-    // Resetear formulario
-    setFormData({ nombre: '', telefono: '', servicio: '', notas: '' });
-    setSelectedTime(null);
-    setSelectedSlot(null);
-    setIsModalOpen(false);
-  }
-};
 
   const handleSelectSlot = (slotInfo: { start: Date; end: Date }) => {
     setSelectedSlot(slotInfo);
@@ -126,13 +135,18 @@ export default function CitasPage() {
     setSelectedTime(time);
   };
 
+  const handleConfirmTime = () => {
+    if (selectedTime) {
+      setIsModalOpen(false);
+    }
+  };
+
   const getAvailableTimesForDate = (date: Date) => {
     const fechaFormato = date.toISOString().split('T')[0];
     const occupied = occupiedSlots[fechaFormato] || [];
-    return defaultAvailableHours.filter(time => !occupied.includes(time));
+    return defaultAvailableHours24.filter(time => !occupied.includes(time));
   };
 
-  // Toolbar personalizado
   const CustomToolbar = ({ label, onNavigate }: any) => (
     <div className="flex flex-wrap items-center justify-between gap-3 mb-4 p-3 bg-neutral-800 rounded-lg shadow-md text-sm text-white">
       <button onClick={() => onNavigate('PREV')} className="flex items-center hover:text-pink-400 transition">
@@ -192,14 +206,47 @@ export default function CitasPage() {
 
               <div>
                 <label className="block font-medium mb-2 text-neutral-300">Teléfono (WhatsApp)</label>
-                <input
-                  type="tel"
-                  name="telefono"
-                  value={formData.telefono}
-                  onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
-                  required
-                  className="w-full p-3 bg-neutral-800 border border-neutral-700 rounded-lg text-white placeholder-neutral-500 focus:border-pink-500 focus:ring-1 focus:ring-pink-500 outline-none"
-                />
+                <div className="relative">
+                  <PhoneInput
+                    country="sv"
+                    value={formData.telefono}
+                    onChange={(value) => setFormData({ ...formData, telefono: value })}
+                    inputProps={{
+                      name: 'telefono',
+                      required: true,
+                    }}
+                    containerStyle={{ width: '100%' }}
+                    inputStyle={{
+                      width: '100%',
+                      padding: '12px 14px 12px 60px',
+                      background: '#1f2937',
+                      border: '1px solid #374151',
+                      borderRadius: '0.5rem',
+                      color: 'white',
+                      fontSize: '1rem',
+                    }}
+                    buttonStyle={{
+                      background: '#374151 !important',
+                      border: '1px solid #374151',
+                      borderRadius: '0.5rem 0 0 0.5rem',
+                      padding: '0 10px',
+                    }}
+                    dropdownStyle={{
+                      background: '#111827',
+                      color: 'white',
+                      border: '1px solid #374151',
+                    }}
+                    searchStyle={{
+                      background: '#1f2937',
+                      color: 'white',
+                      border: '1px solid #374151',
+                    }}
+                    placeholder="+503 7777 8888"
+                  />
+                </div>
+                <p className="text-xs text-neutral-500 mt-2">
+                  Selecciona tu país y escribe tu número
+                </p>
               </div>
 
               <div>
@@ -291,19 +338,22 @@ export default function CitasPage() {
 
                   <div className="mt-6 grid grid-cols-3 gap-3">
                     {selectedSlot &&
-                      getAvailableTimesForDate(selectedSlot.start).map((time, index) => (
-                        <button
-                          key={index}
-                          onClick={() => handleSelectTime(time)}
-                          className={`p-3 rounded-lg border text-center font-medium transition ${
-                            selectedTime === time
-                              ? 'bg-pink-600 text-white border-pink-600 shadow-md'
-                              : 'bg-neutral-800 border-neutral-700 text-white hover:bg-neutral-700'
-                          }`}
-                        >
-                          {time}
-                        </button>
-                      ))}
+                      getAvailableTimesForDate(selectedSlot.start).map((time24, index) => {
+                        const time12 = formatTo12Hour(time24);
+                        return (
+                          <button
+                            key={index}
+                            onClick={() => handleSelectTime(time24)}
+                            className={`p-3 rounded-lg border text-center font-medium transition ${
+                              selectedTime === time24
+                                ? 'bg-pink-600 text-white border-pink-600 shadow-md scale-105'
+                                : 'bg-neutral-800 border-neutral-700 text-white hover:bg-neutral-700'
+                            }`}
+                          >
+                            {time12}
+                          </button>
+                        );
+                      })}
                   </div>
 
                   {selectedSlot && getAvailableTimesForDate(selectedSlot.start).length === 0 && (
@@ -312,13 +362,25 @@ export default function CitasPage() {
                     </p>
                   )}
 
-                  <div className="mt-8 flex justify-end space-x-3">
+                  <div className="mt-8 flex justify-end gap-4">
                     <button
                       type="button"
-                      className="px-5 py-2.5 bg-neutral-800 text-white rounded-lg hover:bg-neutral-700 transition"
+                      className="px-6 py-3 bg-neutral-800 text-white rounded-lg hover:bg-neutral-700 transition"
                       onClick={() => setIsModalOpen(false)}
                     >
                       Cerrar
+                    </button>
+                    <button
+                      type="button"
+                      disabled={!selectedTime}
+                      onClick={handleConfirmTime}
+                      className={`px-6 py-3 rounded-lg font-medium transition ${
+                        selectedTime
+                          ? 'bg-pink-600 hover:bg-pink-700 text-white cursor-pointer'
+                          : 'bg-neutral-700 text-neutral-400 cursor-not-allowed opacity-60'
+                      }`}
+                    >
+                      Confirmar hora
                     </button>
                   </div>
                 </Dialog.Panel>

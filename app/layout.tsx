@@ -21,7 +21,7 @@ export default function RootLayout({
     <html lang="es">
       <body className={`${inter.className} bg-neutral text-gray-800`}>
         <Header />
-        <main className="pt-20">
+        <main className="pt-16 md:pt-20 min-h-screen">
           {children}
         </main>
         <Footer />

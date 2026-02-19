@@ -75,6 +75,20 @@ export default function AdminDashboard() {
             </p>
             <p className="text-gray-400 italic">(Próximamente: lista completa de mensajes)</p>
           </div>
+
+          {/* NUEVA CARD: Cambiar Contraseña */}
+          <div className="bg-neutral-900 p-8 rounded-2xl shadow-2xl border border-neutral-800 hover:border-rose-600 transition-all duration-300">
+            <h2 className="text-2xl font-serif mb-4 text-rose-500">Configuración de Cuenta</h2>
+            <p className="text-neutral-400 mb-6">
+              Cambia tu contraseña para mantener tu cuenta segura.
+            </p>
+            <Link
+              href="/admin/settings"
+              className="inline-block bg-rose-600 hover:bg-rose-700 text-white font-medium px-6 py-3 rounded-lg transition"
+            >
+              Cambiar Contraseña →
+            </Link>
+          </div>
         </div>
       </div>
     </div>

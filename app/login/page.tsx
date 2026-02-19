@@ -94,10 +94,6 @@ export default function LoginPage() {
             Registrarse
           </Link>
         </p>
-
-        <p className="mt-4 text-center text-neutral-500 text-sm">
-          Admin de prueba: <strong>admin@mgmakeup.com</strong> / <strong>admin123</strong>
-        </p>
       </div>
     </div>
   );

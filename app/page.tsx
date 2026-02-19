@@ -1,139 +1,193 @@
-"use client"; //
+"use client";
+
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
+import { supabase } from '@/lib/supabaseClient';
+import Link from 'next/link';
+
+interface Service {
+  id: number;
+  name: string;
+  slug: string;
+  description: string;
+  thumbnail_url?: string | null;
+  price?: number;       // opcional, no lo mostramos en home
+  is_active?: boolean;  // para filtrar en query
+}
 
 export default function Home() {
-  // Datos de servicios (luego lo conectas a Supabase)
-  const services = [
-    {
-      title: 'Maquillaje para Bodas',
-      description: 'Transforma tu día especial en un cuento de hadas con un look radiante y duradero que resalte tu belleza natural.',
-      image: '/bodas.jpeg',
-      galleryLink: '/galeria/bodas',
-    },
-    {
-      title: 'Maquillaje para 15 Años',
-      description: 'Celebra tu transición a la adultez con un maquillaje fresco y glamoroso que capture la esencia de tu juventud y elegancia.',
-      image: '/15age.jpeg',
-      galleryLink: '/galeria/quince',
-    },
-    {
-      title: 'Maquillaje para Eventos Especiales',
-      description: 'Brilla en cualquier ocasión con un estilo personalizado que combina tendencias modernas y toques únicos para impresionar.',
-      image: '/eventosEspeciales.jpeg',
-      galleryLink: '/galeria/eventos',
-    },
-    {
-      title: 'Maquillaje para Fotos',
-      description: 'Consigue fotos perfectas con un maquillaje impecable que resalte tus rasgos bajo cualquier luz, ideal para sesiones profesionales.',
-      image: '/fotos.jpeg',
-      galleryLink: '/galeria/fotos',
-    },
-    {
-      title: 'Maquillaje Artístico',
-      description: 'Libera tu creatividad con diseños audaces y coloridos que convierten tu rostro en una obra de arte viva y expresiva.',
-      image: '/artistico.jpeg',
-      galleryLink: '/galeria/artistico',
-    },
-  ];
+  const [services, setServices] = useState<Service[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Datos de testimonios (6 comentarios)
-  const testimonials = [
-    { quote: '¡Increíble! Me sentí como una estrella en mi boda.', author: 'Ana R.' },
-    { quote: 'El maquillaje duró toda la noche, perfecto para mi fiesta de 15.', author: 'Sofía M.' },
-    { quote: 'Profesionalismo y creatividad en cada detalle. ¡Recomendado!', author: 'Laura P.' },
-    { quote: 'Mi sesión de fotos salió espectacular gracias a MG MakeUp.', author: 'Carla T.' },
-    { quote: 'Arte puro en mi rostro para el carnaval. ¡Asombroso!', author: 'Elena G.' },
-    { quote: 'Atención personalizada y resultados impresionantes. Volveré.', author: 'María L.' },
-  ];
+  useEffect(() => {
+    async function fetchData() {
+      setLoading(true);
+
+      // Fetch servicios activos (igual que en /servicios)
+      const { data: servicesData, error } = await supabase
+        .from('services')
+        .select('id, name, slug, description, thumbnail_url')
+        .eq('is_active', true)
+        .order('id', { ascending: true });
+
+      if (error) {
+        console.error('Error al cargar servicios:', error);
+      } else {
+        setServices(servicesData || []);
+      }
+
+      setLoading(false);
+    }
+
+    fetchData();
+  }, []);
+
+  const whatsappLink = `https://wa.me/50369388836?text=¡Hola!%20Me%20gustaría%20consultar%20sobre%20servicios%20de%20maquillaje%20con%20MG%20MakeUp%20😊`;
 
   return (
-    <main className="pt-20">
-      {/* Hero Section */}
-      <motion.section
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 1 }}
-        className="relative h-screen flex items-center justify-center bg-cover bg-center"
-        style={{ backgroundImage: 'url(/hero-image.jpg)' }}
+    <main className="min-h-screen bg-neutral-950 text-neutral-300 pt-16 sm:pt-20 md:pt-24">
+  {/* Hero Section */}
+  <motion.section
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 1 }}
+    transition={{ duration: 1 }}
+    className="relative min-h-[calc(100vh-4rem)] flex items-center justify-center bg-cover bg-center bg-fixed"  // Ajusta -4rem si navbar >80px
+    style={{ backgroundImage: 'url(/hero-image.jpg)' }}
+  >
+    <div className="absolute inset-0 bg-black/65"></div>
+    <motion.div
+      initial={{ y: 30, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ delay: 0.5, duration: 0.9 }}
+      className="relative z-10 text-center px-6 max-w-5xl mx-auto py-8 md:py-0"  // padding extra en mobile si hace falta
+    >
+      <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-serif text-white font-bold mb-6 leading-tight tracking-tight">
+        Maquillaje Profesional para Tu Momento Especial
+      </h1>
+      <p className="text-lg sm:text-xl md:text-2xl font-sans mb-10 text-neutral-200 max-w-3xl mx-auto">
+        Resalta tu belleza natural con looks únicos, duraderos y personalizados
+      </p>
+      <Link
+        href="/citas"
+        className="inline-block bg-rose-600 text-white font-sans font-semibold text-base sm:text-lg md:text-xl px-8 sm:px-10 py-4 sm:py-5 rounded-full shadow-xl hover:bg-rose-700 hover:shadow-2xl hover:scale-105 transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-rose-500/50"
       >
-        <div className="absolute inset-0 bg-black opacity-40"></div>
-        <motion.div
-          initial={{ y: 50, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.5, duration: 0.8 }}
-          className="relative z-10 text-center text-white"
-        >
-          <h1 className="text-6xl font-serif mb-4">Maquillaje Profesional para Tu Momento Especial</h1>
-          <p className="text-xl font-sans mb-8">Descubre la belleza que mereces</p>
-          <a
-  href="/citas"
-  className="
-    inline-block
-    bg-buttonRed               
-    text-white                 
-    font-sans font-medium text-lg  
-    px-10 py-5                 
-    rounded-full               
-    shadow-xl                  
-    hover:bg-red-600           
-    hover:shadow-2xl           
-    hover:scale-105            
-    transition-all duration-300 ease-in-out 
-    focus:outline-none focus:ring-4 focus:ring-red-300 focus:ring-opacity-50 
-  "
->
-            Reservar Cita
-          </a>
-        </motion.div>
-      </motion.section>
+        Reservar Cita Ahora
+      </Link>
+    </motion.div>
+  </motion.section>
 
-      {/* Sección Servicios Destacados */}
-      <section className="py-16 bg-white">
-        <div className="max-w-7xl mx-auto px-4">
-          <h2 className="text-4xl font-serif text-center mb-12 text-black">Nuestros Servicios</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-8"> {/* 5 columnas en grande */}
-            {services.map((service, index) => (
-              <motion.div
-                key={index}
-                initial={{ scale: 0.9, opacity: 0 }}
-                whileInView={{ scale: 1, opacity: 1 }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
-                className="bg-neutral p-6 rounded shadow hover:shadow-lg transition"
-              >
-                <img src={service.image} alt={service.title} className="w-full h-48 object-cover mb-4 rounded text-black" /> {/* Tamaño fijo */}
-                <h3 className="text-2xl font-serif mb-2 text-black">{service.title}</h3>
-                <p className="mb-4 text-black">{service.description}</p>
-                <a href={service.galleryLink} className="text-accent hover:underline text-black">Ver galería</a>
-              </motion.div>
-            ))}
+      {/* Servicios Destacados */}
+      <section className="py-16 md:py-20 bg-neutral-900">
+        <div className="max-w-7xl mx-auto px-6">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-serif text-center mb-12 md:mb-16 text-white">
+            Nuestros Servicios
+          </h2>
+
+          {loading ? (
+            <div className="text-center text-neutral-400 animate-pulse py-12">
+              Cargando servicios...
+            </div>
+          ) : services.length === 0 ? (
+            <div className="text-center text-neutral-500 py-12">
+              Aún no hay servicios activos publicados
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8">
+              {services.map((service, idx) => (
+                <motion.div
+                  key={service.id}
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.6, delay: idx * 0.08 }}
+                  className="bg-neutral-800 rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl hover:scale-[1.03] transition-all duration-300 flex flex-col"
+                >
+                  {service.thumbnail_url ? (
+                    <img
+                      src={service.thumbnail_url}
+                      alt={service.name}
+                      className="w-full h-56 sm:h-64 object-cover"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div className="w-full h-56 sm:h-64 bg-neutral-700 flex items-center justify-center text-neutral-500">
+                      Sin imagen
+                    </div>
+                  )}
+                  <div className="p-5 sm:p-6 flex flex-col flex-grow">
+                    <h3 className="text-xl sm:text-2xl font-serif text-white mb-3">
+                      {service.name}
+                    </h3>
+                    <p className="text-neutral-400 mb-6 line-clamp-3 flex-grow">
+                      {service.description}
+                    </p>
+                    <Link
+                      href={service.slug ? `/galeria?servicio=${service.slug}` : `/galeria?servicioId=${service.id}`}
+                      className="mt-auto text-rose-500 hover:text-rose-400 font-medium transition-colors inline-block"
+                    >
+                      Ver galería →
+                    </Link>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* Testimonios (sin cambios por ahora) */}
+      <section className="py-16 md:py-20 bg-neutral-950">
+        <div className="max-w-7xl mx-auto px-6">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-serif text-center mb-12 md:mb-16 text-white">
+            Lo que Dicen Nuestras Clientas
+          </h2>
+
+          <div className="overflow-hidden">
+            <motion.div
+              className="flex space-x-6"
+              animate={{ x: [0, -1200] }}
+              transition={{ duration: 40, repeat: Infinity, ease: 'linear' }}
+            >
+              {[...testimonials, ...testimonials].map((t, i) => (
+                <div
+                  key={i}
+                  className="bg-neutral-800 p-6 sm:p-8 rounded-2xl shadow-lg min-w-[300px] sm:min-w-[340px] md:min-w-[420px] flex-shrink-0"
+                >
+                  <p className="italic text-neutral-200 mb-5 sm:mb-6 text-base sm:text-lg">
+                    "{t.quote}"
+                  </p>
+                  <cite className="text-right block font-semibold text-rose-400 text-sm sm:text-base">
+                    - {t.author}
+                  </cite>
+                </div>
+              ))}
+            </motion.div>
           </div>
         </div>
       </section>
 
-      {/* Sección Testimonios - Carrusel horizontal animado */}
-      <section className="py-16 bg-neutral overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4">
-          <h2 className="text-4xl font-serif text-center mb-12">Lo que Dicen Nuestras Clientas</h2>
-          <motion.div
-            className="flex space-x-8"
-            animate={{ x: [0, -testimonials.length * 300] }} // Desplazamiento a la derecha (ajusta ancho)
-            transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
-          >
-            {testimonials.concat(testimonials).map((testimonial, index) => ( // Duplico para loop infinito
-              <motion.blockquote
-                key={index}
-                className="bg-white p-6 rounded shadow min-w-[300px]"
-              >
-                <p className="mb-4 italic text-black">"{testimonial.quote}"</p>
-                <cite className="text-right block font-bold text-black">- {testimonial.author}</cite>
-              </motion.blockquote>
-            ))}
-          </motion.div>
-        </div>
-      </section>
-
       {/* Botón flotante WhatsApp */}
-      <a href="https://wa.me/tu-numero" className="fixed bottom-4 right-4 bg-green-500 text-white p-4 rounded-full shadow-lg hover:bg-green-600">WhatsApp</a>
+      <a
+        href={whatsappLink}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="fixed bottom-6 right-6 z-50 bg-green-600 text-white p-4 rounded-full shadow-2xl hover:bg-green-700 transition-all hover:scale-110"
+        aria-label="Contactar por WhatsApp"
+      >
+        <svg className="w-7 h-7 sm:w-8 sm:h-8" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.198-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.297-.497.099-.198.05-.371-.025-.52-.074-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 1.24 0 .223.013.482.026.694.013.211.198.46.446.52.248.06 1.04.496 1.04.496.297.149 1.04.496 1.04.496.297.149.595.297.893.446z" />
+        </svg>
+      </a>
     </main>
   );
 }
+
+// Testimonios estáticos
+const testimonials = [
+  { quote: '¡Increíble! Me sentí como una estrella en mi boda.', author: 'Ana R.' },
+  { quote: 'El maquillaje duró toda la noche, perfecto para mi fiesta de 15.', author: 'Sofía M.' },
+  { quote: 'Profesionalismo y creatividad en cada detalle. ¡Recomendado!', author: 'Laura P.' },
+  { quote: 'Mi sesión de fotos salió espectacular gracias a MG MakeUp.', author: 'Carla T.' },
+  { quote: 'Arte puro en mi rostro para el carnaval. ¡Asombroso!', author: 'Elena G.' },
+  { quote: 'Atención personalizada y resultados impresionantes. Volveré.', author: 'María L.' },
+];
