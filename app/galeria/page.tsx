@@ -1,10 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react'; // Añadido Suspense para Next.js
 import { useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
-
 
 interface GalleryItem {
   id: number;
@@ -14,19 +13,29 @@ interface GalleryItem {
   services?: { name: string; slug: string } | null;
 }
 
+// Componente principal con envoltorio de Suspense (Requerido en Next.js al usar useSearchParams)
 export default function GaleriaPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-neutral-950 flex items-center justify-center text-white">Cargando...</div>}>
+      <GaleriaContent />
+    </Suspense>
+  );
+}
+
+function GaleriaContent() {
   const searchParams = useSearchParams();
-  const servicioId = searchParams.get('servicioId'); // ← nuevo: filtro por ID
-  const servicioSlug = searchParams.get('servicio'); // opcional, para compatibilidad
+  const servicioId = searchParams.get('servicioId');
+  const servicioSlug = searchParams.get('servicio');
 
   const [gallery, setGallery] = useState<GalleryItem[]>([]);
-  const [serviceName, setServiceName] = useState<string>(''); // para título
+  const [serviceName, setServiceName] = useState<string>('');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchGallery = async () => {
       setLoading(true);
 
+      // Definimos la query
       let query = supabase
         .from('gallery')
         .select(`
@@ -38,12 +47,9 @@ export default function GaleriaPage() {
         `)
         .order('id');
 
-      // Prioridad: filtrar por ID si existe
       if (servicioId) {
         query = query.eq('service_id', Number(servicioId));
-      }
-      // Fallback: filtrar por slug si no hay ID
-      else if (servicioSlug) {
+      } else if (servicioSlug) {
         query = query.eq('services.slug', servicioSlug);
       }
 
@@ -53,13 +59,15 @@ export default function GaleriaPage() {
         console.error('Error al cargar galería:', error);
       }
 
-      setGallery(data || []);
+      // FIX LÍNEAS 59-60: Casting de tipo explícito
+      const typedData = data as unknown as GalleryItem[];
+      setGallery(typedData || []);
 
-      // Obtener nombre del servicio para el título (del primer item o fallback)
-      if (data && data.length > 0 && data[0].services?.name) {
-        setServiceName(data[0].services.name);
+      // Obtener nombre del servicio para el título
+      if (typedData && typedData.length > 0 && typedData[0].services?.name) {
+        setServiceName(typedData[0].services.name);
       } else if (servicioSlug) {
-        setServiceName(servicioSlug.replace(/-/g, ' ')); // humanizar slug
+        setServiceName(servicioSlug.replace(/-/g, ' '));
       }
 
       setLoading(false);
@@ -82,7 +90,7 @@ export default function GaleriaPage() {
 
   return (
     <div className="min-h-screen bg-neutral-950 p-8 text-white">
-      <h1 className="text-4xl md:text-5xl font-bold text-pink-500 text-center mb-12">
+      <h1 className="text-4xl md:text-5xl font-bold text-pink-500 text-center mb-12 capitalize">
         {title}
       </h1>
 
@@ -102,34 +110,34 @@ export default function GaleriaPage() {
           {gallery.map((item) => (
             <div
               key={item.id}
-              className="relative group rounded-xl overflow-hidden shadow-2xl bg-neutral-900"
+              className="relative group rounded-xl overflow-hidden shadow-2xl bg-neutral-900 border border-neutral-800"
             >
               <img
                 src={item.image_url}
                 alt={item.alt_text || 'Imagen de galería'}
                 className="w-full h-64 object-cover transition-transform duration-500 group-hover:scale-110"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-5">
-                <p className="text-lg font-semibold text-white drop-shadow-md">
+              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-5">
+                <p className="text-lg font-semibold text-white">
                   {item.alt_text || 'Sin descripción'}
                 </p>
-                <p className="text-sm text-neutral-300 mt-1 drop-shadow">
-                  {item.services?.name || 'Servicio no asociado'}
+                <p className="text-sm text-pink-400 mt-1 font-medium">
+                  {item.services?.name || 'Servicio general'}
                 </p>
               </div>
             </div>
           ))}
         </div>
-        
       )}
+
       <div className="mt-16 text-center">
-  <Link
-    href="/citas"
-    className="inline-block bg-pink-600 hover:bg-pink-700 text-white font-bold text-lg px-10 py-5 rounded-full shadow-xl transition-all duration-300 transform hover:scale-105"
-  >
-    ¿Te gustó lo que viste? ¡Agenda tu cita!
-  </Link>
-</div>
+        <Link
+          href="/citas"
+          className="inline-block bg-pink-600 hover:bg-pink-700 text-white font-bold text-lg px-10 py-5 rounded-full shadow-xl transition-all duration-300 transform hover:scale-105"
+        >
+          ¿Te gustó lo que viste? ¡Agenda tu cita!
+        </Link>
+      </div>
     </div>
   );
 }

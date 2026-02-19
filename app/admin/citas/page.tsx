@@ -15,8 +15,8 @@ interface Appointment {
   admin_note: string | null;
   adjusted_price: number | null;
   phone: string | null;
-  profiles?: { email: string };
-  services?: { name: string };
+  profiles: { email: string }[];          // array (Supabase lo devuelve así)
+  services: { name: string }[];           // array
 }
 
 export default function AdminCitas() {
@@ -34,7 +34,7 @@ export default function AdminCitas() {
 
       try {
         const { data, error } = await supabase
-          .from('appointments')
+          .from('appointments')  // ← QUITAR <Appointment> aquí
           .select(`
             id,
             user_id,
@@ -52,20 +52,26 @@ export default function AdminCitas() {
           .order('appointment_date', { ascending: true });
 
         if (error) {
-          console.error('Error completo al cargar citas:', error);
+          console.error('Error al cargar citas:', error);
           setError(`Error al cargar: ${error.message} (código: ${error.code || 'desconocido'})`);
           return;
         }
 
-        if (!data) {
-          setError('No se recibieron datos de Supabase');
+        if (!data || data.length === 0) {
+          setAppointments([]);
+          setLoading(false);
           return;
         }
 
-        setAppointments(data);
-      } catch (err: any) {
+        // Type assertion segura: sabemos que el shape coincide con la interfaz
+        setAppointments(data as Appointment[]);
+      } catch (err: unknown) {
         console.error('Excepción en fetchAppointments:', err);
-        setError('Error inesperado al cargar las citas. Revisa la consola.');
+        setError(
+          err instanceof Error
+            ? `Error inesperado: ${err.message}`
+            : 'Error inesperado al cargar las citas. Revisa la consola.'
+        );
       } finally {
         setLoading(false);
       }
@@ -74,7 +80,7 @@ export default function AdminCitas() {
     fetchAppointments();
   }, [user]);
 
-  const updateStatus = async (id: number, newStatus: string) => {
+  const updateStatus = async (id: number, newStatus: Appointment['status']) => {
     const { error } = await supabase
       .from('appointments')
       .update({ status: newStatus })
@@ -82,10 +88,11 @@ export default function AdminCitas() {
 
     if (error) {
       setError(error.message);
+      console.error('Error al actualizar estado:', error);
     } else {
-      setAppointments(appointments.map(a => 
-        a.id === id ? { ...a, status: newStatus } : a
-      ));
+      setAppointments(prev =>
+        prev.map(a => (a.id === id ? { ...a, status: newStatus } : a))
+      );
     }
   };
 
@@ -105,16 +112,24 @@ export default function AdminCitas() {
   };
 
   if (user?.role !== 'admin') {
-    return <div className="min-h-screen flex items-center justify-center text-red-400 text-xl">Acceso solo para administradores</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center text-red-400 text-xl">
+        Acceso solo para administradores
+      </div>
+    );
   }
 
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center text-white text-xl">Cargando citas...</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center text-white text-xl">
+        Cargando citas...
+      </div>
+    );
   }
 
   return (
     <div className="min-h-screen bg-neutral-950 p-6 md:p-8 text-white">
-      <h1 className="text-3xl md:text-4xl font-bold text-pink-500 mb-8 text-center md:text-left">
+      <h1 className="text-3xl md:text-4xl font-bold text-rose-500 mb-8 text-center md:text-left">
         Gestión de Citas
       </h1>
 
@@ -126,9 +141,7 @@ export default function AdminCitas() {
 
       {appointments.length === 0 ? (
         <div className="text-center py-16">
-          <p className="text-2xl text-neutral-400 mb-4">
-            No hay citas registradas aún
-          </p>
+          <p className="text-2xl text-neutral-400 mb-4">No hay citas registradas aún</p>
           <p className="text-neutral-500">
             Cuando los clientes reserven desde la página de citas, aparecerán aquí automáticamente.
           </p>
@@ -150,7 +163,7 @@ export default function AdminCitas() {
             <tbody>
               {appointments.map((appt) => (
                 <tr key={appt.id} className="border-b border-neutral-800 hover:bg-neutral-900 transition-colors">
-                  <td className="p-4">{appt.profiles?.email || 'Sin email'}</td>
+                  <td className="p-4">{appt.profiles?.[0]?.email || 'Sin email registrado'}</td>
                   <td className="p-4 font-medium">
                     {appt.phone ? (
                       <span className="text-green-400">{appt.phone}</span>
@@ -158,7 +171,7 @@ export default function AdminCitas() {
                       <span className="text-neutral-500 italic">No registrado</span>
                     )}
                   </td>
-                  <td className="p-4">{appt.services?.name || 'Servicio eliminado'}</td>
+                  <td className="p-4">{appt.services?.[0]?.name || 'Servicio eliminado'}</td>
                   <td className="p-4 whitespace-nowrap">
                     {appt.appointment_date} <span className="text-neutral-400">•</span> {appt.appointment_time}
                   </td>
@@ -166,12 +179,17 @@ export default function AdminCitas() {
                     {appt.client_comment || <span className="italic text-neutral-500">-</span>}
                   </td>
                   <td className="p-4">
-                    <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
-                      appt.status === 'pending' ? 'bg-yellow-600/80 text-yellow-100' :
-                      appt.status === 'confirmed' ? 'bg-green-600/80 text-green-100' :
-                      appt.status === 'cancelled' ? 'bg-red-600/80 text-red-100' : 
-                      'bg-blue-600/80 text-blue-100'
-                    }`}>
+                    <span
+                      className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
+                        appt.status === 'pending'
+                          ? 'bg-yellow-600/80 text-yellow-100'
+                          : appt.status === 'confirmed'
+                          ? 'bg-green-600/80 text-green-100'
+                          : appt.status === 'cancelled'
+                          ? 'bg-red-600/80 text-red-100'
+                          : 'bg-blue-600/80 text-blue-100'
+                      }`}
+                    >
                       {appt.status.charAt(0).toUpperCase() + appt.status.slice(1)}
                     </span>
                   </td>
