@@ -47,35 +47,33 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-neutral-950 text-neutral-300 pt-16 sm:pt-20 md:pt-24">
-  {/* Hero Section */}
   <motion.section
-    initial={{ opacity: 0 }}
-    animate={{ opacity: 1 }}
-    transition={{ duration: 1 }}
-    className="relative min-h-[calc(100vh-4rem)] flex items-center justify-center bg-cover bg-center bg-fixed"  // Ajusta -4rem si navbar >80px
-    style={{ backgroundImage: 'url(/hero-image.jpg)' }}
+  initial={{ opacity: 0 }}
+  animate={{ opacity: 1 }}
+  transition={{ duration: 1 }}
+  className="relative min-h-[calc(100vh-4rem)] flex items-center justify-center bg-neutral-950 bg-fixed"  // ← Fondo negro sólido + bg-fixed si quieres
+>
+  <div className="absolute inset-0 bg-black/65"></div>  {/* Overlay negro que mantiene el efecto oscuro */}
+  <motion.div
+    initial={{ y: 30, opacity: 0 }}
+    animate={{ y: 0, opacity: 1 }}
+    transition={{ delay: 0.5, duration: 0.9 }}
+    className="relative z-10 text-center px-6 max-w-5xl mx-auto py-8 md:py-0"
   >
-    <div className="absolute inset-0 bg-black/65"></div>
-    <motion.div
-      initial={{ y: 30, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      transition={{ delay: 0.5, duration: 0.9 }}
-      className="relative z-10 text-center px-6 max-w-5xl mx-auto py-8 md:py-0"  // padding extra en mobile si hace falta
+    <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-serif text-white font-bold mb-6 leading-tight tracking-tight">
+      Maquillaje Profesional para Tu Momento Especial
+    </h1>
+    <p className="text-lg sm:text-xl md:text-2xl font-sans mb-10 text-neutral-200 max-w-3xl mx-auto">
+      Resalta tu belleza natural con looks únicos, duraderos y personalizados
+    </p>
+    <Link
+      href="/citas"
+      className="inline-block bg-rose-600 text-white font-sans font-semibold text-base sm:text-lg md:text-xl px-8 sm:px-10 py-4 sm:py-5 rounded-full shadow-xl hover:bg-rose-700 hover:shadow-2xl hover:scale-105 transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-rose-500/50"
     >
-      <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-serif text-white font-bold mb-6 leading-tight tracking-tight">
-        Maquillaje Profesional para Tu Momento Especial
-      </h1>
-      <p className="text-lg sm:text-xl md:text-2xl font-sans mb-10 text-neutral-200 max-w-3xl mx-auto">
-        Resalta tu belleza natural con looks únicos, duraderos y personalizados
-      </p>
-      <Link
-        href="/citas"
-        className="inline-block bg-rose-600 text-white font-sans font-semibold text-base sm:text-lg md:text-xl px-8 sm:px-10 py-4 sm:py-5 rounded-full shadow-xl hover:bg-rose-700 hover:shadow-2xl hover:scale-105 transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-rose-500/50"
-      >
-        Reservar Cita Ahora
-      </Link>
-    </motion.div>
-  </motion.section>
+      Reservar Cita Ahora
+    </Link>
+  </motion.div>
+</motion.section>
 
       {/* Servicios Destacados */}
       <section className="py-16 md:py-20 bg-neutral-900">
@@ -185,6 +183,21 @@ export default function Home() {
     </main>
   );
 }
+
+<button
+  onClick={async () => {
+    const promptEvent = window.deferredPrompt; // guarda antes
+    if (promptEvent) {
+      promptEvent.prompt();
+      const { outcome } = await promptEvent.userChoice;
+      console.log("Resultado instalación:", outcome);
+    } else {
+      console.log("No hay prompt disponible");
+    }
+  }}
+>
+  Instalar App Manual
+</button>
 
 // Testimonios estáticos
 const testimonials = [

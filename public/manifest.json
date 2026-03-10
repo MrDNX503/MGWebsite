@@ -4,21 +4,14 @@
   "description": "Servicios de maquillaje para bodas, 15 años, eventos y más",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#000000",
+  "background_color": "#ffffff",
   "theme_color": "#d45b5b",
-  "orientation": "portrait-primary",
   "icons": [
     {
       "src": "/logo.jpg",
-      "sizes": "192x192",
+      "sizes": "any",
       "type": "image/jpeg",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/logo.jpg",
-      "sizes": "512x512",
-      "type": "image/jpeg",
-      "purpose": "any maskable"
+      "purpose": "any"
     }
   ]
 }
