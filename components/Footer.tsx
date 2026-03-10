@@ -1,35 +1,51 @@
+import Link from 'next/link';
+import NextImage from 'next/image';
+
 export default function Footer() {
+  // Configuración del enlace de WhatsApp
+  const whatsappNumber = "50369388836";
+  const whatsappMessage = "Hola MG MakeUp, me gustaría solicitar información.";
+  const whatsappLink = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(whatsappMessage)}`;
+
   return (
     <footer className="bg-neutral-900 py-8 text-center text-neutral-400 border-t border-neutral-800">
-      <p className="text-sm">&copy; {new Date().getFullYear()} MG MakeUp. Todos los derechos reservados.</p>
+      <p className="text-sm">
+        &copy; {new Date().getFullYear()} MG MakeUp. Todos los derechos reservados.
+      </p>
       
-      <div className="flex justify-center space-x-8 mt-6">
-        {/* Instagram - usa el username real desde Supabase o hardcodea por ahora */}
+      <div className="flex justify-center items-center space-x-8 mt-6">
+        {/* Instagram */}
         <a
-          href="https://www.instagram.com/meryguzman77/" // ← CAMBIA A CUENTA REAL
+          href="https://www.instagram.com/meryguzman77/"
           target="_blank"
           rel="noopener noreferrer"
-          className="text-rose-400 hover:text-rose-300 transition text-2xl"
+          className="hover:scale-110 transition-transform duration-200"
           aria-label="Instagram de MG MakeUp"
         >
-          <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
-            {/* Icono Instagram simple */}
-            <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 3.157.227.227 3.157.072 7.053.014 8.333 0 8.741 0 12s.014 3.667.072 4.947c.155 3.896 3.085 6.826 6.981 6.981C8.333 23.986 8.741 24 12 24s3.667-.014 4.947-.072c3.896-.155 6.826-3.085 6.981-6.981.058-1.28.072-1.688.072-4.947s-.014-3.667-.072-4.947c-.155-3.896-3.085-6.826-6.981-6.981C15.667.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zm0 10.162a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 11-2.88 0 1.44 1.44 0 012.88 0z" />
-          </svg>
+          <NextImage 
+            src="/instagram-icon.png" 
+            alt="Instagram"
+            width={32} 
+            height={32}
+            className="opacity-80 hover:opacity-100"
+          />
         </a>
 
-        {/* WhatsApp real */}
+        {/* WhatsApp */}
         <a
-          href="https://wa.me/50369388836"
+          href={whatsappLink}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-green-500 hover:text-green-400 transition text-2xl"
-          aria-label="WhatsApp de MG MakeUp"
+          className="hover:scale-110 transition-transform duration-200"
+          aria-label="Contactar por WhatsApp"
         >
-          <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
-            {/* Icono WA */}
-            <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zM6.577.481C5.398-.31 3.903-.001 3.031 1.943L2.147 3.265C1.448 4.471.787 5.762.524 7.263c-.266 1.562-.217 2.654.003 3.853.219 1.199.82 2.4 1.621 3.678 1.416 2.265 3.303 4.317 6.303 6.318.603.401 1.553.742 2.436.742h.002c.717 0 1.552-.34 2.436-.742 2.999-2 4.886-4.052 6.302-6.317.801-1.278 1.402-2.479 1.621-3.678.22-1.199.269-2.291.003-3.853-.263-1.501-.923-2.792-1.622-3.998l-.884-1.322C20.097.001 18.602-.31 17.423.481c-1.179.791-1.459 2.489-.67 3.668l.884 1.322c.783 1.179 2.489 1.459 3.668.67l1.322-.884c1.179-.791 1.459-2.489.67-3.668-.789-1.179-2.489-1.459-3.668-.67l-1.322.884c-1.179.791-1.459 2.489-.67 3.668l.884 1.322c.783 1.179 2.489 1.459 3.668.67l1.322-.884c1.179-.791 1.459-2.489.67-3.668-.789-1.179-2.489-1.459-3.668-.67l-1.322.884c-1.179.791-1.459 2.489-.67 3.668l.884 1.322c.783 1.179 2.489 1.459 3.668.67l1.322-.884c1.179-.791 1.459-2.489.67-3.668-.789-1.179-2.489-1.459-3.668-.67l-1.322.884c-1.179.791-1.459 2.489-.67 3.668l.884 1.322c.783 1.179 2.489 1.459 3.668.67l1.322-.884c1.179-.791 1.459-2.489.67-3.668-.789-1.179-2.489-1.459-3.668-.67l-1.322.884z" />
-          </svg>
+          <NextImage 
+            src="/whatsapp-icon.png" 
+            alt="WhatsApp"
+            width={32} 
+            height={32}
+            className="opacity-80 hover:opacity-100"
+          />
         </a>
       </div>
     </footer>
